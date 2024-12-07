@@ -1,0 +1,4 @@
+apache-airflow==2.5.1
+kafka-python==2.0.2
+lasio==0.23
+psycopg2-binary==2.8.6
