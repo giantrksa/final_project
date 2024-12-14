@@ -1,149 +1,114 @@
 version: '3.8'
 
 services:
-  # Zookeeper Service
   zookeeper:
-    image: wurstmeister/zookeeper:3.4.6
+    image: confluentinc/cp-zookeeper:7.3.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
     networks:
-      - wlogging-network
+      - app-network
 
-  # Kafka Service
   kafka:
-    image: wurstmeister/kafka:2.13-2.7.0
-    ports:
-      - "9092:9092"
-    environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    image: confluentinc/cp-kafka:7.3.0
     depends_on:
       - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
     networks:
-      - wlogging-network
+      - app-network
 
-  # PostgreSQL Service
   postgres:
     image: postgres:13
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres_dw
+      POSTGRES_DB: welldb
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - wlogging-network
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Spark Master Service
-  spark-master:
-    image: bitnami/spark:3.3.0
+  spark:
+    image: bitnami/spark:3.4.1
     environment:
-      - SPARK_MODE=master
-      - SPARK_MASTER_PORT=7077
-      - SPARK_MASTER_WEBUI_PORT=8080
+      SPARK_MODE: master
+      SPARK_RPC_AUTHENTICATION_ENABLED: "no"
+      SPARK_RPC_ENCRYPTION_ENABLED: "no"
+      SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED: "no"
+      SPARK_SSL_ENABLED: "no"
     ports:
-      - "8080:8080"  # Spark Master Web UI
-      - "7077:7077"  # Spark Master Port
+      - "8080:8080"  # Spark UI
     networks:
-      - wlogging-network
+      - app-network
 
-  # Spark Worker Service
-  spark-worker:
-    image: bitnami/spark:3.3.0
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=2G
-    ports:
-      - "8081:8081"  # Spark Worker Web UI
-    depends_on:
-      - spark-master
-    networks:
-      - wlogging-network
-
-  # Airflow Webserver Service
-  airflow-webserver:
+  producer:
     build:
-      context: .
-      dockerfile: docker/airflow/Dockerfile
-    restart: "no"
-    depends_on:
-      - postgres
-      - spark-master
-      - kafka
-      - zookeeper
+      context: ./scripts/producer
+      dockerfile: Dockerfile
     environment:
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW__CORE__FERNET_KEY}
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - SPARK_MASTER_HOST_NAME=${SPARK_MASTER_HOST_NAME}
-      - SPARK_MASTER_PORT=${SPARK_MASTER_PORT}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-    ports:
-      - "8083:8080"  # Airflow Web UI
+      KAFKA_BOOTSTRAP_SERVER: kafka:9092
+      TOPIC_NAME: well_logs
+      LAS_FILE_PATH: /data/alcor1.las
     volumes:
-      - ./dags:/opt/airflow/dags
-      - ./scripts:/opt/airflow/scripts  # Removed to prevent overwriting
-      - ./spark-scripts:/spark-scripts
-      - ./data:/resources/data
-    command: ["airflow", "webserver"]
-
-  # Airflow Scheduler Service
-  airflow-scheduler:
-    build:
-      context: .
-      dockerfile: docker/airflow/Dockerfile
-    restart: "no"
+      - ./data:/data
     depends_on:
-      - airflow-webserver
-      - postgres
-      - spark-master
       - kafka
-      - zookeeper
-    environment:
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW__CORE__FERNET_KEY}
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - SPARK_MASTER_HOST_NAME=${SPARK_MASTER_HOST_NAME}
-      - SPARK_MASTER_PORT=${SPARK_MASTER_PORT}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-    volumes:
-      - ./dags:/opt/airflow/dags
-      - ./scripts:/opt/airflow/scripts  # Removed to prevent overwriting
-      - ./spark-scripts:/spark-scripts
-      - ./data:/resources/data
-    command: ["airflow", "scheduler"]
+    networks:
+      - app-network
 
-  # Dash App Service
-  dash-app:
+  spark-consumer:
     build:
-      context: .
-      dockerfile: docker/dash-app/Dockerfile
-    restart: always
+      context: ./scripts/spark-consumer
+      dockerfile: Dockerfile
+    environment:
+      KAFKA_BOOTSTRAP_SERVER: kafka:9092
+      TOPIC_NAME: well_logs
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: welldb
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      spark:
+        condition: service_started
+    networks:
+      - app-network
+
+  dashboard:
+    build:
+      context: ./scripts/dashboard
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/welldb
     ports:
       - "8050:8050"
-    environment:
-      - POSTGRES_HOST=postgres
-      - POSTGRES_DB=postgres_dw
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    volumes:
-      - ./apps/dash-lastodash:/app
-      - ./data:/resources/data
-    command: ["gunicorn", "lastodash:server", "-b", "0.0.0.0:8050"]
+    depends_on:
+      - postgres
+    networks:
+      - app-network
 
 networks:
-  wlogging-network:
+  app-network:
+    driver: bridge
 
 volumes:
-  postgres-data:
+  postgres_data:

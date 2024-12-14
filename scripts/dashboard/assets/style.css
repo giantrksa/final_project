@@ -1,0 +1,335 @@
+/* scripts/dashboard/assets/styles.css */
+
+/* General Styles */
+body {
+    font-family: aktiv-grotesk-thin, sans-serif;
+    margin-left: 0px;
+    padding: 50px;
+    background-color: #F9F9F9;
+}
+
+/* Header Styles */
+#las-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+#las-logo {
+    height: 90px;
+    background-color: white;
+    margin-right: 20px;
+    display: inline-block;
+}
+
+#las-header-text {
+    margin-top: 24px;
+    text-align: center;
+}
+
+#las-header-text h1 {
+    position: relative;
+}
+
+#las-file-info {
+    display: block;
+    padding: 0px 3px;
+    color: black;
+    font-weight: 100 !important;
+}
+
+/* Dash Logo */
+#dash-logo {
+    height: 55px;
+    position: absolute;
+    right: 0;
+    margin-top: 40px;
+    padding-right: 120px;
+}
+
+/* Controls Section */
+#controls {
+    position: fixed;
+    padding: 10px;
+    padding-bottom: 15px;
+    top: 0px;
+    right: 10px;
+    z-index: 100;
+    text-align: center;
+    font-size: 20pt;
+    text-transform: lowercase;
+    font-variant: all-small-caps;
+}
+
+/* Section Styles */
+.section {
+    margin: 50px;
+    padding: 10px;
+    min-width: 850px;
+}
+
+.section-title {
+    background-color: #0157A0;
+    color: white;
+    width: calc(100% - 80px);
+    display: inline-block;
+    padding: 10px 70px 10px 10px;
+    font-size: 20pt;
+    font-weight: 100 !important;
+    z-index: 100 !important;
+}
+
+/* Page Styles */
+.page {
+    padding: 50px;
+    background-color: white;
+}
+
+/* Table Styles */
+#las-table {
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 10px !important;
+    text-align: center !important;
+}
+
+#las-table table, #las-table-print table {
+    font-family: aktiv-grotesk-thin, sans-serif;
+    border-collapse: collapse;
+}
+
+#las-table-print {
+    display: none;
+}
+
+#las-table-print table {
+    width: 100%;
+}
+
+#las-table-print th, #las-table-print td {
+    border: 1px solid lightgrey;
+    font-weight: lighter;
+    padding: 4px;
+    font-size: 10pt;
+    text-align: center;
+}
+
+.tablepage {
+    margin-top: 100px;
+    page-break-after: always;
+    page-break-inside: avoid;
+}
+
+#las-table-print .tablepage {
+    position: relative;
+    left: -100px;
+}
+
+/* DataTable Styles */
+.dash-spreadsheet td:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.dash-spreadsheet-container .dash-spreadsheet-inner td.dash-cell.column-0 {
+    width: 0px !important;
+}
+
+.dash-spreadsheet-container .dash-spreadsheet-inner td.dash-cell.column-1 .dash-cell-value {
+    width: 100px !important;
+}
+
+.dash-delete-cell {
+    width: 20px !important;
+    background-color: white;
+    text-align: center;
+}
+
+.dash-spreadsheet td.dash-cell {
+    box-shadow: inset 0px 0px 0px 0px #d3d3d3 !important;
+}
+
+/* Graph Styles */
+#las-curves .svg-container {
+    margin: auto !important;
+}
+
+#las-curves {
+    margin-bottom: 50px;
+    position: relative;
+    top: -125px;
+    left: -125px;
+}
+
+/* Print Styles */
+@page { size: auto;  margin: 0mm; }
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    html, body {
+        page-break-after: avoid !important;
+        page-break-before: avoid !important;
+    }
+
+    .page, .page *, #las-curves {
+        visibility: visible;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .section {
+        margin: 0px !important;
+        page-break-before: always;
+        page-break-after: auto;
+    }
+
+    .page {
+        margin: 1.25in 0.25in 1.25in 1.25in;
+        border: solid 1px rgba(0,0,0,0);
+    }
+
+    .section-title {
+        position: relative;
+        top: -10px;
+        background-color: #0057a5 !important;
+        -webkit-print-color-adjust: exact;
+        visibility: visible;
+        font-size: 28pt !important;
+        font-weight: 300 !important;
+        text-align: center;
+        margin-top: 0px !important;
+        padding: 10px !important;
+        width: 300px !important;
+        margin-left: 50px !important;
+    }
+
+    #las-curves {
+        page-break-after: avoid !important;
+        margin-bottom: -100px !important;
+        margin-left: 20px;
+    }
+
+    #frontpage {
+        background-color: rgba(0,0,0,0) !important;
+        margin: 0px;
+        page-break-after: always;
+    }
+
+    #frontpage h1 {
+        color: white !important;
+    }
+
+    #frontpage, #frontpage * {
+        page-break-after: always;
+        visibility: visible;
+        -webkit-print-color-adjust: exact;
+    }
+
+    #dash-logo {
+        display: none;
+    }
+
+    #las-logo {
+        position: absolute !important;
+        display: block !important;
+        top: 50% !important;
+        padding: 0px !important;
+        margin: 0px !important;
+        right: calc(100% - 424px) !important;
+        height: 182px !important;
+        clip-path: none !important;
+    }
+
+    #las-header {
+        display: auto;
+        width: auto;
+    }
+
+    #las-header-text {
+        position: absolute !important;
+        top: 50% !important;
+        right: 0px;
+        margin-top: 0px !important;
+        padding: 55px;
+        background-color: #0057a5;
+    }
+
+    #las-header-text h1 {
+        font-size: 35pt !important;
+        font-weight: bolder;
+        color: white !important;
+    }
+
+    #las-file-info {
+        font-size: 12pt;
+        margin-left: -2px !important;
+        background-color: #0057a5 !important;
+        color: white !important;
+        padding: 10px;
+        font-weight: 100 !important;
+    }
+
+    #las-logo {
+        height: 90px;
+        background-color: white;
+        margin-right: 20px;
+        display: inline-block;
+    }
+
+    #las-table {
+        display: none;
+    }
+
+    #las-table-print {
+        margin-top: -150px;
+        display: block !important;
+        page-break-after: always !important;
+    }
+}
+
+/* Print Button Styles */
+#las-print {
+    font-family: aktiv-grotesk-thin, sans-serif;
+    font-variant: all-small-caps;
+    text-transform: lowercase;
+    font-size: 14pt;
+    background-color: rgba(0,0,0,0);
+    padding: 20px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    color: #0157A0;
+    margin-top:10px;
+    border: solid 1px #0157A0;
+    border-radius: 5px;
+    transition-duration: 500ms;
+}
+
+#las-print:hover {
+    color: #232323;
+    border-color: #232323;
+}
+
+/* Input Placeholder Styles */
+::-webkit-input-placeholder {
+    text-align: center;
+    color: #fafafa;
+}
+
+:-moz-placeholder { /* Firefox 18- */
+    text-align: center;
+    color: #fafafa;
+}
+
+::-moz-placeholder {  /* Firefox 19+ */
+    text-align: center;
+    color: #fafafa;
+}
+
+:-ms-input-placeholder {
+    text-align: center;
+    color: #fafafa;
+}

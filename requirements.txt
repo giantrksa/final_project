@@ -1,0 +1,10 @@
+kafka-python
+psycopg2-binary
+pyspark
+lasio
+pandas
+plotly
+dash
+dash-core-components
+dash-html-components
+dash-table

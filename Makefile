@@ -1,47 +1,37 @@
 # Makefile
 
-.PHONY: build up down logs exec bash
+.PHONY: build up down logs producer spark-run websocket-stream dashboard
 
-# Build Docker images without cache
+# Build all Docker images
 build:
-	docker-compose build --no-cache airflow-webserver airflow-scheduler dash-app
+	docker-compose build
 
-# Start all services in detached mode
+# Start all services
 up:
 	docker-compose up -d
 
 # Stop all services
 down:
-	docker-compose down
+	docker-compose down --remove-orphans
 
 # View logs for all services
 logs:
 	docker-compose logs -f
 
-# Execute a command in the airflow-webserver container
-exec-webserver:
-	docker-compose exec airflow-webserver /bin/bash
+# Start the Producer service
+producer:
+	docker-compose up -d producer
 
-# Execute a command in the airflow-scheduler container
-exec-scheduler:
-	docker-compose exec airflow-scheduler /bin/bash
+# Run the Spark Consumer service
+spark-run:
+	docker-compose up -d spark-consumer
 
-# Execute a command in the postgres container
-exec-postgres:
-	docker-compose exec postgres psql -U postgres -d postgres_dw
+# Run the Dashboard
+dashboard:
+	docker-compose up -d dashboard
 
-# Execute a command in the kafka container
-exec-kafka:
-	docker-compose exec kafka bash
-
-# Execute a command in the spark-master container
-exec-spark-master:
-	docker-compose exec spark-master bash
-
-# Execute a command in the spark-worker container
-exec-spark-worker:
-	docker-compose exec spark-worker bash
-
-# Execute a command in the dash-app container
-exec-dash-app:
-	docker-compose exec dash-app /bin/bash
+# Run all services: Producer, Spark, WebSocket, Dashboard
+all-services:
+	$(MAKE) producer
+	$(MAKE) spark-run
+	$(MAKE) dashboard
